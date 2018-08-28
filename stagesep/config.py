@@ -1,5 +1,6 @@
 import os
 import time
+from structlog import get_logger
 
 
 # project relative
@@ -22,3 +23,6 @@ TEMP_RESULT_TXT = TEMP_RESULT_NAME + '.txt'
 DIR_LIST = (ROOT_DIR_PATH, PROJECT_DIR_PATH, RESOURCE_DIR_PATH, OUTPUT_DIR_PATH, TEMP_DIR_PATH)
 for each_dir in DIR_LIST:
     os.makedirs(each_dir, exist_ok=True)
+
+# logger
+logger = get_logger()

@@ -2,6 +2,14 @@
 
 > detect stages in video with OCR 
 
+## Install
+
+```bash 
+pip install opencv-python
+```
+
+and install tesseract for OCR, see https://github.com/tesseract-ocr/tesseract/wiki
+
 ## Usage
 
 ```python

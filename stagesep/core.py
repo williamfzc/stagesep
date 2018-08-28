@@ -6,6 +6,7 @@ from .config import *
 
 
 class StageSepVideo(object):
+    """ 视频对象 """
     def __init__(self, video_path):
         src = cv2.VideoCapture(video_path)
         self.src = src
@@ -14,19 +15,29 @@ class StageSepVideo(object):
         self.width = int(src.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(src.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+    def __repr__(self):
+        return json.dumps({
+            'src': repr(self.src),
+            'frame_count': self.frame_count,
+            'fps': self.fps,
+            'size': (self.width, self.height),
+        })
+
 
 def load_video(video_path):
     """
-    Load video file into stagesep
+    读取视频并将其转换成ssv对象
 
     :return:
     """
-    return StageSepVideo(video_path)
+    ssv = StageSepVideo(video_path)
+    logger.msg('LOAD VIDEO OK', vid=ssv)
+    return ssv
 
 
 def rebuild_video(old_stagesep_video, new_fps):
     """
-    Rebuild this video, change the size or fps ...
+    将视频重新打包成指定fps
 
     :return:
     """
@@ -39,31 +50,46 @@ def rebuild_video(old_stagesep_video, new_fps):
         writer.write(frame)
         success, frame = src.read()
 
-    return StageSepVideo(TEMP_VIDEO)
+    new_ssv = StageSepVideo(TEMP_VIDEO)
+    logger.msg('REBUILD OK', new_vid=new_ssv)
+    return new_ssv
 
 
 def get_stage():
     """
-    get stages from video, using OCR
+    TODO 从视频中提取阶段
 
     :return:
     """
-    print('get stage')
+    raise NotImplementedError('todo')
 
 
 def check_env():
-    tesseract_return_code = subprocess.call('tesseract --version', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    """
+    环境检测，如tesseract是否安装
+
+    :return:
+    """
+    tesseract_return_code = subprocess.call('tesseract --version')
     if tesseract_return_code:
         raise ImportError('tesseract installed?')
 
 
-def analyse_video(target_stagesep_video):
+def analyse_video(target_stagesep_video, lang=None, real_time_log=None):
+    """
+    使用OCR分析视频
+
+    :param target_stagesep_video:
+    :param lang:
+    :param real_time_log:
+    :return:
+    """
     src = target_stagesep_video.src
     ret = True
     cur_frame_count = 0
     result_list = []
 
-    with open(EXEC_TIMESTAMP + '.txt', 'w+', encoding=DEFAULT_ENCODING) as result_file:
+    with open(RESULT_TXT, 'w+', encoding=DEFAULT_ENCODING) as result_file:
         while ret:
             ret, frame = src.read()
             if not ret:
@@ -76,19 +102,21 @@ def analyse_video(target_stagesep_video):
             blur_gray_frame = cv2.medianBlur(gray_frame, 3)
             # OCR阶段
             cv2.imwrite(TEMP_PIC, blur_gray_frame)
-            exec_tesseract(lang='chi_sim')
-            chi_sim_result = get_tesseract_result()
+            exec_ocr(lang=lang)
+            chi_sim_result = get_ocr_result()
             # 结果处理
             cur_result = (str(cur_frame_count), str(cur_second), json.dumps(chi_sim_result))
+            if real_time_log:
+                logger.msg('CURRENT', result=cur_result)
             result_list.append(cur_result)
             result_file.write('|,,|'.join(cur_result) + '\n')
             result_file.flush()
     return result_list
 
 
-def exec_tesseract(lang=None):
+def exec_ocr(lang=None):
     """
-    exec tesseract to analyse picture
+    命令行启动tesseract
 
     :param lang:
     :return:
@@ -99,21 +127,23 @@ def exec_tesseract(lang=None):
     return_code = subprocess.call(
         cmd,
         shell=True,
-        stdout=subprocess.PIPE
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     if return_code:
-        raise RuntimeError('tesseract error: %s', return_code)
+        raise RuntimeError('tesseract error: {}'.format(return_code))
 
 
-def get_tesseract_result():
+def get_ocr_result():
     """
-    get tesseract analysis result from txt, and return list
+    获取OCR分析结果
 
     :return:
     """
     analyse_result = []
     with open(TEMP_RESULT_TXT, encoding=DEFAULT_ENCODING) as result_file:
         for line in result_file:
+            # filter
             line = re.sub('\W', '', line).replace('\n', '').replace('\r', '')
             if line:
                 analyse_result.append(line)
