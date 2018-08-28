@@ -9,7 +9,7 @@ from .config import *
 
 
 @contextlib.contextmanager
-def cv2_video_capture(ssv):
+def ssv_video_capture(ssv):
     video_cap = cv2.VideoCapture(ssv.path)
     yield video_cap
     video_cap.release()
@@ -36,12 +36,11 @@ class StageSepVideo(object):
 
 
 def get_first_and_last_frame(target_ssv):
-    with cv2_video_capture(target_ssv) as video_cap:
+    """ 获取视频的首尾帧 """
+    with ssv_video_capture(target_ssv) as video_cap:
         _, first_frame = video_cap.read()
         video_cap.set(1, target_ssv.frame_count - 1)
         _, last_frame = video_cap.read()
-        cv2.imwrite('first.png', first_frame)
-        cv2.imwrite('last.png', last_frame)
     return first_frame, last_frame
 
 
@@ -57,6 +56,7 @@ def load_video(video_path):
 
 
 def rotate_pic(old_pic, rotate_time):
+    """ 帧旋转 """
     new_pic = np.rot90(old_pic, rotate_time)
     return new_pic
 
@@ -131,10 +131,9 @@ def analyse_video(target_stagesep_video, lang=None, real_time_log=None):
     first_frame, last_frame = frame_prepare(first_frame), frame_prepare(last_frame)
     ret = True
     cur_frame_count = 0
-    old_frame = None
     result_list = []
 
-    with cv2_video_capture(target_stagesep_video) as src, \
+    with ssv_video_capture(target_stagesep_video) as src, \
             open(RESULT_TXT, 'w+', encoding=DEFAULT_ENCODING) as result_file:
         while ret:
             ret, frame = src.read()
@@ -165,10 +164,6 @@ def analyse_video(target_stagesep_video, lang=None, real_time_log=None):
             result_list.append(cur_result)
             result_file.write('|,,|'.join(cur_result) + '\n')
             result_file.flush()
-
-            # SSIM
-            if old_frame is not None:
-                old_frame = frame
     return result_list
 
 
