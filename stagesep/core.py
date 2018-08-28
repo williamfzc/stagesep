@@ -2,15 +2,25 @@ import cv2
 import subprocess
 import re
 import json
+import contextlib
 import numpy as np
+from skimage.measure import compare_ssim
 from .config import *
+
+
+@contextlib.contextmanager
+def cv2_video_capture(ssv):
+    video_cap = cv2.VideoCapture(ssv.path)
+    yield video_cap
+    video_cap.release()
 
 
 class StageSepVideo(object):
     """ 视频对象 """
+
     def __init__(self, video_path):
         src = cv2.VideoCapture(video_path)
-        self.src = src
+        self.path = video_path
         self.frame_count = src.get(cv2.CAP_PROP_FRAME_COUNT)
         self.fps = src.get(cv2.CAP_PROP_FPS)
         self.width = int(src.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -18,11 +28,21 @@ class StageSepVideo(object):
 
     def __repr__(self):
         return json.dumps({
-            'src': repr(self.src),
+            'src': repr(self.path),
             'frame_count': self.frame_count,
             'fps': self.fps,
             'size': (self.width, self.height),
         })
+
+
+def get_first_and_last_frame(target_ssv):
+    with cv2_video_capture(target_ssv) as video_cap:
+        _, first_frame = video_cap.read()
+        video_cap.set(1, target_ssv.frame_count - 1)
+        _, last_frame = video_cap.read()
+        cv2.imwrite('first.png', first_frame)
+        cv2.imwrite('last.png', last_frame)
+    return first_frame, last_frame
 
 
 def load_video(video_path):
@@ -57,7 +77,7 @@ def rebuild_video(old_stagesep_video, new_fps=None, rotate_time=None):
     target_fps = new_fps or old_stagesep_video.fps
     writer = cv2.VideoWriter(TEMP_VIDEO, cv2.VideoWriter_fourcc(*"WMV1"), target_fps, size)
 
-    src = old_stagesep_video.src
+    src = cv2.VideoCapture(old_stagesep_video.path)
     success, frame = src.read()
     while success:
         if rotate_time:
@@ -65,6 +85,7 @@ def rebuild_video(old_stagesep_video, new_fps=None, rotate_time=None):
         writer.write(frame)
         success, frame = src.read()
 
+    writer.release()
     new_ssv = StageSepVideo(TEMP_VIDEO)
     logger.msg('REBUILD OK', new_vid=new_ssv)
     return new_ssv
@@ -90,21 +111,31 @@ def check_env():
         raise ImportError('tesseract installed?')
 
 
+def frame_prepare(old_frame):
+    # 处理图片
+    gray_frame = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
+    blur_gray_frame = cv2.medianBlur(gray_frame, 3)
+    return blur_gray_frame
+
+
 def analyse_video(target_stagesep_video, lang=None, real_time_log=None):
     """
-    使用OCR分析视频
+    分析视频
 
     :param target_stagesep_video:
     :param lang:
     :param real_time_log:
     :return:
     """
-    src = target_stagesep_video.src
+    first_frame, last_frame = get_first_and_last_frame(target_stagesep_video)
+    first_frame, last_frame = frame_prepare(first_frame), frame_prepare(last_frame)
     ret = True
     cur_frame_count = 0
+    old_frame = None
     result_list = []
 
-    with open(RESULT_TXT, 'w+', encoding=DEFAULT_ENCODING) as result_file:
+    with cv2_video_capture(target_stagesep_video) as src, \
+            open(RESULT_TXT, 'w+', encoding=DEFAULT_ENCODING) as result_file:
         while ret:
             ret, frame = src.read()
             if not ret:
@@ -112,20 +143,32 @@ def analyse_video(target_stagesep_video, lang=None, real_time_log=None):
             # 当前帧参数
             cur_frame_count += 1
             cur_second = src.get(cv2.CAP_PROP_POS_MSEC) / 1000
-            # 处理图片
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            blur_gray_frame = cv2.medianBlur(gray_frame, 3)
+            # 帧处理
+            frame = frame_prepare(frame)
             # OCR阶段
-            cv2.imwrite(TEMP_PIC, blur_gray_frame)
+            cv2.imwrite(TEMP_PIC, frame)
             exec_ocr(lang=lang)
             chi_sim_result = get_ocr_result()
+            # 与首尾帧的相似度
+            first_sim = compare_ssim(first_frame, frame)
+            last_sim = compare_ssim(last_frame, frame)
             # 结果处理
-            cur_result = (str(cur_frame_count), str(cur_second), json.dumps(chi_sim_result))
+            cur_result = (
+                str(cur_frame_count),
+                str(cur_second),
+                json.dumps(chi_sim_result),
+                str(first_sim),
+                str(last_sim),
+            )
             if real_time_log:
                 logger.msg('CURRENT', result=cur_result)
             result_list.append(cur_result)
             result_file.write('|,,|'.join(cur_result) + '\n')
             result_file.flush()
+
+            # SSIM
+            if old_frame is not None:
+                old_frame = frame
     return result_list
 
 
