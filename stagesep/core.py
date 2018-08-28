@@ -2,6 +2,7 @@ import cv2
 import subprocess
 import re
 import json
+import numpy as np
 from .config import *
 
 
@@ -35,18 +36,32 @@ def load_video(video_path):
     return ssv
 
 
-def rebuild_video(old_stagesep_video, new_fps):
-    """
-    将视频重新打包成指定fps
+def rotate_pic(old_pic, rotate_time):
+    new_pic = np.rot90(old_pic, rotate_time)
+    return new_pic
 
+
+def rebuild_video(old_stagesep_video, new_fps=None, rotate_time=None):
+    """
+    将视频重新按照指定格式打包
+
+    :param old_stagesep_video: old ssv
+    :param new_fps:
+    :param rotate_time: 0为保持原状，1为逆时针旋转90度，2为逆时针180，以此类推
     :return:
     """
-    size = (old_stagesep_video.width, old_stagesep_video.height)
-    writer = cv2.VideoWriter(TEMP_VIDEO, cv2.VideoWriter_fourcc(*"WMV1"), new_fps, size)
+    if rotate_time % 2 == 0:
+        size = (old_stagesep_video.width, old_stagesep_video.height)
+    else:
+        size = (old_stagesep_video.height, old_stagesep_video.width)
+    target_fps = new_fps or old_stagesep_video.fps
+    writer = cv2.VideoWriter(TEMP_VIDEO, cv2.VideoWriter_fourcc(*"WMV1"), target_fps, size)
 
     src = old_stagesep_video.src
     success, frame = src.read()
     while success:
+        if rotate_time:
+            frame = rotate_pic(frame, rotate_time)
         writer.write(frame)
         success, frame = src.read()
 
