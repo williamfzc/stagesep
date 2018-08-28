@@ -2,13 +2,17 @@ import stagesep
 
 
 # design
-# still not implemented
 
 # begin
-stagesep_object = stagesep.load_video()
+# 导入视频
+stagesep_object = stagesep.load_video('res/demo_video.mp4')
 
 # operation
-stagesep_object = stagesep_object.rebuild_video()
+# 主要用于规范视频，例如在30上下波动，则可以用此方法规范视频的fps
+# 但不适合大幅度修改，例如60改为30，会导致后面时间对不上
+stagesep_object = stagesep.rebuild_video(stagesep_object, 60)
+print(stagesep_object.fps)
 
 # get result
-stage_list = stagesep_object.get_stage()
+# 获取视频分析结果
+stagesep.analyse_video(stagesep_object)
