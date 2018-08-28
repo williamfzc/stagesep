@@ -6,6 +6,7 @@ import json
 stagesep_object = stagesep.load_video('res/demo_video.mp4')
 
 # 主要用于规范视频，用于调整fps与旋转视频
+# 这里的rotate_time指的是逆时针90的旋转次数，3即向逆时针旋转270度，以此类推
 stagesep_object = stagesep.rebuild_video(stagesep_object, new_fps=30, rotate_time=3)
 
 # 查看一些基本信息
