@@ -69,10 +69,23 @@ with open('output/1535442458.txt', encoding='utf-8') as f:
 12|,,|0.4|,,|["Gomponent\u79d2\u5f00"]|,,|0.9838403582426749|,,|0.8712865474825727
 ```
 
+## 相似度变化
+
+统一使用SSIM进行相似度匹配。
+
+### 与视频首帧尾帧的相似度变化趋势
+
+![](pic/similarity.png)
+
+### 文字识别出来的词数变化趋势
+
+![](pic/word_count.png)
+
 ## 关联与依赖
 
 - [opencv](https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_tutorials.html): 图像与视频处理
 - [tesseract](https://github.com/tesseract-ocr/tesseract/wiki/Downloads): OCR
+- [skimage](https://github.com/scikit-image/scikit-image): 图片相似度
 
 ## License
 

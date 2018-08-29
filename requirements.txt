@@ -2,3 +2,4 @@ opencv-python
 structlog
 numpy
 scikit-image
+matplotlib
