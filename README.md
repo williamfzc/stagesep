@@ -2,12 +2,12 @@
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/492f06dfdfc447e06470/maintainability)](https://codeclimate.com/github/williamfzc/stagesep/maintainability)
 
-> 利用OCR，视频中的阶段检测工具
+> 利用OCR与图像识别，检测出视频中的阶段
 
 ## 安装
 
-```bash 
-pip install opencv-python
+```bash
+pip install -r requirements.txt
 ```
 
 同时需要在PC上安装tesseract，详见https://github.com/tesseract-ocr/tesseract/wiki
@@ -18,7 +18,7 @@ pip install opencv-python
 tesseract
 ```
 
-如果能正常打印出内容说明已经安装成功。
+如果能正常打印出内容说明已经安装成功。另外中文视频需要从[这里](https://github.com/tesseract-ocr/langdata)下载语言包。
 
 ## 使用
 
@@ -80,6 +80,11 @@ with open('output/1535442458.txt', encoding='utf-8') as f:
 ### 文字识别出来的词数变化趋势
 
 ![](pic/word_count.png)
+
+## TODO
+
+- jieba分词对ocr结果进一步分析
+- 从相似度变化趋势中提取阶段
 
 ## 关联与依赖
 
