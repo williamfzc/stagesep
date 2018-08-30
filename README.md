@@ -61,7 +61,14 @@ with open('output/sample_code.txt', encoding='utf-8') as f:
 
 ## 数据
 
-以`|,,|`为分隔符，分别为帧编号、对应的时间、识别到的文字、与首帧的相似度、与末帧的相似度、是否存在特征图片
+以`|,,|`为分隔符，分别为：
+
+- 帧编号
+- 对应的时间
+- 识别到的文字
+- 与首帧的相似度
+- 与末帧的相似度
+- 是否存在特征图片（1为存在，0为不存在）与匹配程度（0-1）
 
 ```bash
 1|,,|0.03333333333333333|,,|["Component\u79d2\u5f00"]|,,|1.0|,,|0.8744666747566574|,,|[[0, 0.27060889074688604]]
@@ -78,7 +85,7 @@ with open('output/sample_code.txt', encoding='utf-8') as f:
 
 ## 相似度变化
 
-统一使用SSIM进行相似度匹配。
+统一使用SSIM进行图像相似度匹配。
 
 ### 与视频首帧尾帧的相似度变化趋势
 
@@ -95,7 +102,7 @@ with open('output/sample_code.txt', encoding='utf-8') as f:
 ## 特征提取
 
 - opencv与skimage均提供了match_template方法供使用。
-- 算法：Fast Normalized Cross-Correlation
+- 目前使用skimage提供的方法。算法：Fast Normalized Cross-Correlation
 - 详见[这里](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_template.html)
 
 ![](pic/match_template_effect.png)
@@ -106,12 +113,14 @@ with open('output/sample_code.txt', encoding='utf-8') as f:
 
 ## TODO
 
-- []jieba分词对OCR结果进一步分析
+- [] jieba分词对OCR结果进一步分析
     - OCR得到的结果通常是不规则的句子
     - 使用分词后数据会变得更规范
-- []从相似度变化趋势中提取阶段
+
+- [] 从相似度变化趋势中提取阶段
     - 就目前情况来看，当前帧与首尾帧的相似度变化趋势是有规律的
-- [x]关键点过滤
+
+- [x] 关键点过滤
     - 假设我们需要在某段视频中找出会出现某个物体的部分帧
     - 传入该物体的特征图片（如果需要的是一个按钮，那么就是这个按钮的截图
     - 启动分析，结果中将会多出一列bool说明该帧中是否出现了该物体
