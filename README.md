@@ -98,7 +98,11 @@ with open('output/sample_code.txt', encoding='utf-8') as f:
 - 算法：Fast Normalized Cross-Correlation
 - 详见[这里](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_template.html)
 
-![](pic/match_template.png)
+![](pic/match_template_effect.png)
+
+可以看到，对于特征的识别效果显著：
+
+![](pic/match_template_change.png)
 
 ## TODO
 
