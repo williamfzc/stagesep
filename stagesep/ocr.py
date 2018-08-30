@@ -4,16 +4,19 @@ tesseract在命令行运行，负责提取图片中的文字并生成文本文�
 """
 import subprocess
 import re
+import cv2
 from .config import *
 
 
-def exec_ocr(lang=None):
+def exec_ocr(frame, lang=None):
     """
     命令行启动tesseract
 
+    :param frame:
     :param lang:
     :return:
     """
+    cv2.imwrite(TEMP_PIC, frame)
     cmd = ['tesseract', TEMP_PIC, TEMP_RESULT_NAME]
     if lang:
         cmd = [*cmd, '-l', lang]
