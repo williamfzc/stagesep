@@ -1,18 +1,10 @@
 import cv2
-import subprocess
-import re
 import json
-import contextlib
-import numpy as np
 from skimage.measure import compare_ssim
+from skimage.feature import match_template
+from .ocr import exec_ocr, get_ocr_result
+from .utils import *
 from .config import *
-
-
-@contextlib.contextmanager
-def ssv_video_capture(ssv):
-    video_cap = cv2.VideoCapture(ssv.path)
-    yield video_cap
-    video_cap.release()
 
 
 class StageSepVideo(object):
@@ -35,15 +27,6 @@ class StageSepVideo(object):
         })
 
 
-def get_first_and_last_frame(target_ssv):
-    """ 获取视频的首尾帧 """
-    with ssv_video_capture(target_ssv) as video_cap:
-        _, first_frame = video_cap.read()
-        video_cap.set(1, target_ssv.frame_count - 1)
-        _, last_frame = video_cap.read()
-    return first_frame, last_frame
-
-
 def load_video(video_path):
     """
     读取视频并将其转换成ssv对象
@@ -53,12 +36,6 @@ def load_video(video_path):
     ssv = StageSepVideo(video_path)
     logger.msg('LOAD VIDEO OK', vid=ssv)
     return ssv
-
-
-def rotate_pic(old_pic, rotate_time):
-    """ 帧旋转 """
-    new_pic = np.rot90(old_pic, rotate_time)
-    return new_pic
 
 
 def rebuild_video(old_stagesep_video, new_fps=None, rotate_time=None):
@@ -91,44 +68,50 @@ def rebuild_video(old_stagesep_video, new_fps=None, rotate_time=None):
     return new_ssv
 
 
-def get_stage():
+def check_feature_file(feature_file_list):
     """
-    TODO 从视频中提取阶段
+    验证feature文件是否存在及合法性
 
+    :param feature_file_list: cv image list
     :return:
     """
-    raise NotImplementedError('todo')
+    if not isinstance(feature_file_list, (list, tuple)):
+        raise TypeError('feature list should be iterable')
+    for each_file in feature_file_list:
+        if not os.path.exists(each_file):
+            raise FileNotFoundError(each_file + ' not found')
+    return [frame_prepare(cv2.imread(each_feature)) for each_feature in feature_file_list]
 
 
-def check_env():
+def check_image_if_contain(img, feature_list):
     """
-    环境检测，如tesseract是否安装
+    利用match_template判定图像中是否包含特征列表中的内容
 
-    :return:
+    :param img:
+    :param feature_list:
+    :return return_list:
     """
-    tesseract_return_code = subprocess.call('tesseract --version')
-    if tesseract_return_code:
-        raise ImportError('tesseract installed?')
+    result_list = []
+    for each_feature in feature_list:
+        res = match_template(img, each_feature)
+        _, max_val, _, max_loc = cv2.minMaxLoc(res)
+        result_list.append([1 if max_val > 0.99 else 0, max_val])
+    return result_list
 
 
-def frame_prepare(old_frame):
-    # 处理图片
-    gray_frame = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
-    blur_gray_frame = cv2.medianBlur(gray_frame, 3)
-    return blur_gray_frame
-
-
-def analyse_video(target_stagesep_video, lang=None, real_time_log=None):
+def analyse_video(target_stagesep_video, lang=None, real_time_log=None, feature_list=None):
     """
     分析视频
 
-    :param target_stagesep_video:
-    :param lang:
-    :param real_time_log:
+    :param target_stagesep_video: ssv
+    :param lang: 与tesseract对应的语言包同名，需要自行在其中配置好语言包
+    :param real_time_log: 是否在运行时打印log
+    :param feature_list: list，可传入特征图片路径，传入之后将对每一帧进行分析以判定特征图片是否存在其中
     :return:
     """
-    first_frame, last_frame = get_first_and_last_frame(target_stagesep_video)
-    first_frame, last_frame = frame_prepare(first_frame), frame_prepare(last_frame)
+    if feature_list:
+        feature_list = check_feature_file(feature_list)
+    first_frame, last_frame = map(frame_prepare, get_first_and_last_frame(target_stagesep_video))
     ret = True
     cur_frame_count = 0
     result_list = []
@@ -148,56 +131,24 @@ def analyse_video(target_stagesep_video, lang=None, real_time_log=None):
             cv2.imwrite(TEMP_PIC, frame)
             exec_ocr(lang=lang)
             chi_sim_result = get_ocr_result()
+            # 特征提取
+            contained_feature_list = check_image_if_contain(frame, feature_list)
             # 与首尾帧的相似度
             first_sim = compare_ssim(first_frame, frame)
             last_sim = compare_ssim(last_frame, frame)
             # 结果处理
-            cur_result = (
+            cur_result = [
                 str(cur_frame_count),
                 str(cur_second),
                 json.dumps(chi_sim_result),
                 str(first_sim),
                 str(last_sim),
-            )
+            ]
+            if contained_feature_list:
+                cur_result.append(str(contained_feature_list))
             if real_time_log:
                 logger.msg('CURRENT', result=cur_result)
             result_list.append(cur_result)
             result_file.write('|,,|'.join(cur_result) + '\n')
             result_file.flush()
     return result_list
-
-
-def exec_ocr(lang=None):
-    """
-    命令行启动tesseract
-
-    :param lang:
-    :return:
-    """
-    cmd = ['tesseract', TEMP_PIC, TEMP_RESULT_NAME]
-    if lang:
-        cmd = [*cmd, '-l', lang]
-    return_code = subprocess.call(
-        cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if return_code:
-        raise RuntimeError('tesseract error: {}'.format(return_code))
-
-
-def get_ocr_result():
-    """
-    获取OCR分析结果
-
-    :return:
-    """
-    analyse_result = []
-    with open(TEMP_RESULT_TXT, encoding=DEFAULT_ENCODING) as result_file:
-        for line in result_file:
-            # filter
-            line = re.sub('\W', '', line).replace('\n', '').replace('\r', '')
-            if line:
-                analyse_result.append(line)
-    return analyse_result
