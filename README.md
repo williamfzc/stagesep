@@ -113,7 +113,7 @@ with open('output/sample_code.txt', encoding='utf-8') as f:
 
 ## TODO
 
-- [ ] jieba分词对OCR结果进一步分析
+- [x] jieba分词对OCR结果进一步分析
     - OCR得到的结果通常是不规则的句子
     - 使用分词后数据会变得更规范
 

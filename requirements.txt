@@ -3,3 +3,4 @@ structlog
 numpy
 scikit-image
 matplotlib
+jieba

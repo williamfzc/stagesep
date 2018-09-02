@@ -5,6 +5,7 @@ tesseract在命令行运行，负责提取图片中的文字并生成文本文�
 import subprocess
 import re
 import cv2
+import jieba
 from .config import *
 
 
@@ -42,5 +43,6 @@ def get_ocr_result():
             # filter
             line = re.sub('\W', '', line).replace('\n', '').replace('\r', '')
             if line:
-                analyse_result.append(line)
+                word_list = jieba.cut(line)
+                analyse_result.extend(word_list)
     return analyse_result
