@@ -1,6 +1,5 @@
 import stagesep
 
-
 # 导入视频
 ssv = stagesep.load_video('res/demo_video.mp4')
 
@@ -13,8 +12,18 @@ print(ssv.fps)
 
 # 获取视频分析结果
 # 可以直接根据这个list分析
-result = stagesep.analyse_video(ssv, lang='chi_sim', real_time_log=True, feature_list=['res/feature1.jpg'])
+result = stagesep.analyse_video(
+    ssv,
 
+    # 对应tesseract的语言包
+    lang='chi_sim',
+
+    # 是否输入分析实时log
+    real_time_log=True,
+
+    # 特征图片
+    feature_list=['res/feature1.jpg'],
+)
 
 # analysis
 import json

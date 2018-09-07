@@ -4,71 +4,37 @@
 
 > 利用OCR与图像识别，检测出视频中的阶段
 
-## 安装
+## 效果
 
-```bash
-pip install -r requirements.txt
-```
+通过使用stagesep，你可以将一段视频中每一帧的特征提取出来，生成数据供后续分析。
 
-同时需要在PC上安装tesseract，详见https://github.com/tesseract-ocr/tesseract/wiki
-
-安装完成后在命令行中输入：
-
-```bash
-tesseract
-```
-
-如果能正常打印出内容说明已经安装成功。另外中文视频需要从[这里](https://github.com/tesseract-ocr/langdata)下载语言包。
-
-## 使用
-
-方法的详细参数详见docstring
+你只需要：
 
 ```python
-import stagesep
-
-
 # 导入视频
 ssv = stagesep.load_video('res/demo_video.mp4')
 
-# 主要用于规范视频，用于调整fps与旋转视频
-# 这里的rotate_time指的是逆时针90的旋转次数，3即向逆时针旋转270度，以此类推
-ssv = stagesep.rebuild_video(ssv, new_fps=30, rotate_time=3)
-
-# 查看一些基本信息
-print(ssv.fps)
-
-# 获取视频分析结果
-# 可以直接根据这个list分析
-result = stagesep.analyse_video(ssv, lang='chi_sim', real_time_log=True, feature_list=['res/feature1.jpg'])
+# 分析视频
+result = stagesep.analyse_video(ssv)
 ```
 
-在处理之后可以自由对这些数据进行分析，得到结论：
-
-```python
-# analysis
-import json
-
-# 也可以根据生成的文件进行分析
-with open('output/sample_code.txt', encoding='utf-8') as f:
-    for line in f:
-        frame_id, time_stamp, result, first_sim, last_sim, match_template = line.split('|,,|')
-        result = json.loads(result)
-        match_template = json.loads(match_template)
-        print(match_template)
-
-```
-
-## 数据
-
-以`|,,|`为分隔符，分别为：
+就能够将视频中的特征提取出来！以`|,,|`为分隔符，分别为：
 
 - 帧编号
-- 对应的时间
-- 识别到的文字
-- 与首帧的相似度
-- 与末帧的相似度
-- 是否存在特征图片（1为存在，0为不存在）与匹配程度（0-1）
+- 帧对应的视频时间
+- 当前帧包含的文字
+    - 如结果为`["微信"]`，代表当前帧中出现了`微信`字样
+    - 可以借此得到视频的不同阶段
+- 与首帧的图像相似度
+    - 可以得到开始出现变化的时刻
+- 与末帧的图像相似度
+    - 可以得到进入稳态的时刻
+- 当前帧是否存在特征图片
+    - 例如，传入一张特征图片，是一个表情包
+    - 如果结果为`[[0, 0.27060889074688604]]`，两个参数分别代表：
+        - 当前帧没有出现该表情包
+        - `match_template`的结果为0.27
+    - 适合在没有文字的场景下进行阶段界定
 
 ```bash
 1|,,|0.03333333333333333|,,|["Component\u79d2\u5f00"]|,,|1.0|,,|0.8744666747566574|,,|[[0, 0.27060889074688604]]
@@ -83,27 +49,51 @@ with open('output/sample_code.txt', encoding='utf-8') as f:
 10|,,|0.3333333333333333|,,|["Component\u79d2\u5f00"]|,,|0.9838234965397075|,,|0.8716437205735402|,,|[[0, 0.27276039086080933]]
 ```
 
-## 相似度变化
+每一帧会对应一行数据。
 
-统一使用SSIM进行图像相似度匹配。
+## 使用
 
-### 与视频首帧尾帧的相似度变化趋势
+更详细的方法的使用参考[`demo.py`](https://github.com/williamfzc/stagesep/blob/master/demo.py)。
+
+## 安装
+
+```bash
+pip install -r requirements.txt
+```
+
+同时需要在PC上安装tesseract，详见https://github.com/tesseract-ocr/tesseract/wiki
+
+安装完成后在命令行中输入：
+
+```bash
+tesseract
+```
+
+如果能正常打印出内容说明已经安装成功。另外包含中文文本的视频需要从[这里](https://github.com/tesseract-ocr/langdata)下载语言包。
+
+## 相关原理
+
+### 图像相似度
+
+- 统一使用SSIM进行图像相似度匹配
+- 直接使用`skimage`提供的方法`compare_ssim`
 
 相似度变化趋势是规律的，基本符合应用加载流程。
 
 ![](pic/similarity.png)
 
-### 文字识别出来的词数变化趋势
+### OCR
 
-就目前来看，词数趋势难以反映问题。
+就目前来看，词数趋势难以自动化地反映问题。
 
 ![](pic/word_count.png)
 
-## 特征提取
+但可以作为后续分析的重要依据。
 
-- opencv与skimage均提供了match_template方法供使用。
-- 目前使用skimage提供的方法。算法：Fast Normalized Cross-Correlation
-- 详见[这里](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_template.html)
+### 特征匹配
+
+- opencv与skimage均提供了`match_template`方法供使用。目前直接使用skimage提供的方法。
+- 算法：Fast Normalized Cross-Correlation，详见[这里](http://scikit-image.org/docs/dev/auto_examples/features_detection/plot_template.html)
 
 ![](pic/match_template_effect.png)
 
