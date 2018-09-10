@@ -7,6 +7,10 @@ import re
 import cv2
 import jieba
 from .config import *
+from .utils import check_env
+
+
+check_env()
 
 
 def exec_ocr(frame, lang=None):

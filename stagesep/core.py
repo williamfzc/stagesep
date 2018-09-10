@@ -2,9 +2,14 @@ import cv2
 import json
 from skimage.measure import compare_ssim
 from skimage.feature import match_template
-from .ocr import exec_ocr, get_ocr_result
 from .utils import *
 from .config import *
+
+try:
+    ocr_module = __import__('.ocr')
+except ModuleNotFoundError:
+    ocr_module = None
+    logger.msg('OCR MODULE NOT FOUND', msg='tesseract should be installed for ocr')
 
 
 class StageSepVideo(object):
@@ -49,7 +54,7 @@ def rebuild_video(old_stagesep_video, new_fps=None, rotate_time=None):
     """
     size = (old_stagesep_video.width, old_stagesep_video.height)
     if rotate_time and rotate_time % 2 != 0:
-        size[0], size[1] = size[1], size[0]
+        size = (size[1], size[0])
     target_fps = new_fps or old_stagesep_video.fps
 
     writer = cv2.VideoWriter(TEMP_VIDEO, cv2.VideoWriter_fourcc(*"WMV1"), target_fps, size)
@@ -126,8 +131,11 @@ def analyse_video(target_ssv, lang=None, real_time_log=None, feature_list=None):
             # 帧处理
             frame = frame_prepare(frame)
             # OCR阶段
-            exec_ocr(frame, lang=lang)
-            chi_sim_result = get_ocr_result()
+            if ocr_module:
+                ocr_module.exec_ocr(frame, lang=lang)
+                chi_sim_result = ocr_module.get_ocr_result()
+            else:
+                chi_sim_result = ''
             # 特征提取
             contained_feature_list = check_image_if_contain(frame, feature_list)
             # 与首尾帧的相似度
