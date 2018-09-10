@@ -9,7 +9,6 @@ import jieba
 from .config import *
 from .utils import check_env
 
-
 check_env()
 
 
@@ -25,9 +24,10 @@ def exec_ocr(frame, lang=None):
     cmd = ['tesseract', TEMP_PIC, TEMP_RESULT_NAME]
     if lang:
         cmd = [*cmd, '-l', lang]
+    need_shell = True if PLATFORM_NAME == 'Windows' else False
     return_code = subprocess.call(
         cmd,
-        shell=True,
+        shell=need_shell,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )

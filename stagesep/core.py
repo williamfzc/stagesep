@@ -1,13 +1,14 @@
 import cv2
 import json
+import importlib
 from skimage.measure import compare_ssim
 from skimage.feature import match_template
 from .utils import *
 from .config import *
 
 try:
-    ocr_module = __import__('.ocr')
-except ModuleNotFoundError:
+    ocr_module = importlib.import_module('stagesep.ocr')
+except ImportError:
     ocr_module = None
     logger.msg('OCR MODULE NOT FOUND', msg='tesseract should be installed for ocr')
 
