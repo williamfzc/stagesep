@@ -1,7 +1,10 @@
 import os
 import time
+import platform
 from structlog import get_logger
 
+
+PLATFORM_NAME = platform.system()
 
 # project relative
 ROOT_DIR_PATH = os.path.dirname(os.path.dirname(__file__))

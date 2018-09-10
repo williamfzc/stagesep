@@ -33,7 +33,9 @@ def check_env():
 
     :return:
     """
-    ocr_return_code = subprocess.call('tesseract --version')
+    ocr_return_code = subprocess.call(
+        ['tesseract', '--version']
+    )
     if ocr_return_code:
         raise ImportError('tesseract installed?')
 
