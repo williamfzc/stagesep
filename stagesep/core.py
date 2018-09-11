@@ -182,8 +182,9 @@ def apply_ocr(target_frame, analysis_config, analysis_result):
     :return:
     """
     ocr_installed = analysis_config.OCR_INSTALLED
+    no_ocr = analysis_config.NO_OCR
     ocr_lang = analysis_config.OCR_LANG
-    if ocr_installed:
+    if ocr_installed and not no_ocr:
         ocr_module.exec_ocr(target_frame, lang=ocr_lang)
         result = ocr_module.get_ocr_result()
         analysis_result.CONTAIN_WORD = result
@@ -210,7 +211,7 @@ def handle_result(analysis_config, analysis_result, final_result_list, final_res
     final_result_file.flush()
 
 
-def analyse_video(target_ssv, lang=None, real_time_log=None, feature_list=None):
+def analyse_video(target_ssv, no_ocr=None, lang=None, real_time_log=None, feature_list=None):
     """
     分析视频
 
@@ -220,6 +221,7 @@ def analyse_video(target_ssv, lang=None, real_time_log=None, feature_list=None):
     :param feature_list: list，可传入特征图片路径，传入之后将对每一帧进行分析以判定特征图片是否存在其中
     :return:
     """
+    target_ssv.analysis_config.NO_OCR = bool(no_ocr)
     target_ssv.analysis_config.OCR_LANG = lang or ''
     target_ssv.analysis_config.REAL_TIME_LOG = bool(real_time_log)
     target_ssv.analysis_config.FEATURE_PIC_LIST = check_feature_file(feature_list) or []
