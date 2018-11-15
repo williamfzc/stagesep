@@ -115,6 +115,11 @@ tesseract
     - 传入该物体的特征图片（如果需要的是一个按钮，那么就是这个按钮的截图
     - 启动分析，结果中将会多出一列bool说明该帧中是否出现了该物体
 
+- [ ] docker file
+- [ ] 代码结构调整
+- [ ] 更加友好的API
+- [ ] 功能精简与改良（后期以OCR与特征识别为主）
+
 ## 关联与依赖
 
 - [opencv](https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_tutorials.html): 图像与视频处理
