@@ -1,5 +1,6 @@
 # stagesep
 
+[![PyPI version](https://badge.fury.io/py/stagesep.svg)](https://badge.fury.io/py/stagesep)
 [![Maintainability](https://api.codeclimate.com/v1/badges/492f06dfdfc447e06470/maintainability)](https://codeclimate.com/github/williamfzc/stagesep/maintainability)
 
 > 利用OCR与图像识别，检测出视频中的阶段
@@ -57,11 +58,15 @@ result = stagesep.analyse_video(ssv)
 
 ## 安装
 
+需要python3
+
 ```bash
-pip install -r requirements.txt
+pip install stagesep 
 ```
 
-同时需要在PC上安装tesseract，详见https://github.com/tesseract-ocr/tesseract/wiki
+### 如果需要OCR
+
+需要在PC上安装tesseract，详见[官方文档](https://github.com/tesseract-ocr/tesseract/wiki)
 
 安装完成后在命令行中输入：
 
