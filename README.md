@@ -1,3 +1,5 @@
+> 项目迁移至 [stagesep2](https://github.com/williamfzc/stagesep2)
+
 # stagesep
 
 [![PyPI version](https://badge.fury.io/py/stagesep.svg)](https://badge.fury.io/py/stagesep)
