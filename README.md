@@ -1,4 +1,8 @@
-> 项目迁移至 [stagesep2](https://github.com/williamfzc/stagesep2)
+# 项目迁移至 [stagesep2](https://github.com/williamfzc/stagesep2)
+
+> 实际使用上推荐使用stagesep2
+
+---
 
 # stagesep
 
