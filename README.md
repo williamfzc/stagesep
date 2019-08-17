@@ -1,6 +1,4 @@
-# 项目迁移至 [stagesep2](https://github.com/williamfzc/stagesep2)
-
-> 实际使用上推荐使用stagesep2
+该项目处于低活跃状态，建议使用 https://github.com/williamfzc/stagesepx
 
 ---
 
